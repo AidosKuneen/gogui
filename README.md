@@ -5,7 +5,7 @@
 
 # gogui
 
-This library is a UI alternative for Go which uses the Chrome browser (or a default browser) which is already installed. 
+This library is a UI alternative for Go which uses the Chrome browser (or a default browser). 
 The application communicates with the browser via [socket.io](https://socket.io/).
  That means you can call funcs in the browser from the server (and vice versa) without worrying about the websocket and JavaScript.
 
@@ -34,7 +34,7 @@ This requires
 
 ## Example
 
-See [example directory](https://github.com/AidosKuneen/gogui/example)
+See [example directory](https://github.com/AidosKuneen/gogui/tree/master/example)
 
 # Contribution
 Improvements to the codebase and pull requests are encouraged.
