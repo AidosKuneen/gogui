@@ -298,6 +298,10 @@ func (c *Client) writePump() error {
 
 // serveWs handles websocket requests from the peer.
 func serveWs(client *Client, w http.ResponseWriter, r *http.Request) {
+	if client.conn != nil {
+		log.Println("only one person can connect")
+		return
+	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
