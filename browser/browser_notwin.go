@@ -1,4 +1,4 @@
-// +build windows
+// +!build windows
 
 // Copyright (c) 2018 Aidos Developer
 
@@ -20,39 +20,47 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package gogui
+package browser
 
-import (
-	"log"
+import "runtime"
 
-	"golang.org/x/sys/windows/registry"
-)
-
-//defaultPath returns paths of default browsers.
+//DefaultPath returns paths of default browsers.
 func defaultPaths() *cmdarg {
-	return &cmdarg{
-		cmd: []string{"cmd"},
-		arg: []string{"/c", "start", "%s"},
+	switch runtime.GOOS {
+	case "darwin":
+		return &cmdarg{
+			cmd: []string{"/usr/bin/open"},
+			arg: []string{"%s"},
+		}
+
+	default:
+		return &cmdarg{
+			cmd: []string{"xdg-open"},
+			arg: []string{"%s"},
+		}
 	}
 }
 
-//chromePath returns paths of chrome.
+//ChromePath returns paths of chrome.
 func chromePaths() *cmdarg {
-	regpath := `SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe`
-	k, err := registry.OpenKey(registry.LOCAL_MACHINE, regpath, registry.QUERY_VALUE)
-	if err != nil {
-		log.Println(regpath, err)
-		return nil, nil
-	}
-	defer k.Close()
+	switch runtime.GOOS {
+	case "darwin":
+		return &cmdarg{
+			cmd: []string{"/usr/bin/open"},
+			arg: []string{"-n", "-a", "Google Chrome", "--args", "%s"},
+		}
 
-	s, _, err := k.GetStringValue("")
-	if err != nil {
-		log.Println(err)
-		return nil, nil
-	}
-	return &cmdarg{
-		cmd: []string{s},
-		arg: []string{"%s"},
+	default:
+		return &cmdarg{
+			cmd: []string{
+				"chrome",
+				"google-chrome",
+				"chrome-stable",
+				"google-chrome-stable",
+				"/opt/google/chrome/chrome",
+				"/opt/google/chrome/google-chrome",
+			},
+			arg: []string{"%s"},
+		}
 	}
 }

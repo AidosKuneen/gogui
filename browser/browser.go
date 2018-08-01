@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package gogui
+package browser
 
 import (
 	"errors"
@@ -63,8 +63,8 @@ func browsers() []*cmdarg {
 //ErrNoBrowser is an error that no browsers are found.
 var ErrNoBrowser = errors.New("no browsers are found")
 
-//StartBrowser  starts browsers and opens URL p.
-func StartBrowser(p string) error {
+//Start  starts browsers and opens URL p.
+func Start(p string) error {
 	cmds := browsers()
 	for _, cmd := range cmds {
 		cmd.replaceURL(p)

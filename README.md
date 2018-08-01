@@ -5,11 +5,10 @@
 
 # gogui
 
-This library is a UI alternative for Go which uses the Chrome browser (or a default browser). 
-The application communicates with the browser via [socket.io](https://socket.io/).
- That means you can call funcs in the browser from the server (and vice versa) without worrying about the websocket and JavaScript.
+This library is a GUI alternative for Go which uses the Chrome browser (or a default browser). 
+The application communicates with the browser via WebSocket message using simple JSON.
 
-You can write the server-side in Go and client-side in Javascript.
+You can write  server-side code in Go and client-side code in Javascript.
 
 ## Requirements
 

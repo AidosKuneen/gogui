@@ -25,46 +25,52 @@ import (
 	"log"
 	"net/http"
 
-	"gopkg.in/googollee/go-socket.io.v1"
+	"github.com/AidosKuneen/gogui/browser"
 )
 
 //GUI is chans for notifiing connected and finished.
 type GUI struct {
-	Connected chan socketio.Conn
 	Finished  chan error
+	Connected chan struct{}
+	Client    *Client
+}
+
+//New returns a GUI struct.
+func New() *GUI {
+	return &GUI{
+		Finished:  make(chan error),
+		Connected: make(chan struct{}),
+		Client:    newClient(),
+	}
+}
+
+//On registers handler for event n.
+func (g *GUI) On(n string, f interface{}) error {
+	return g.Client.On(n, f)
+}
+
+//Emit emits "name" event with  dat.
+func (g *GUI) Emit(name string, dat interface{}, f interface{}) error {
+	return g.Client.Emit(name, dat, f)
 }
 
 //Start starts GUI bakcend.
 //Set dest to react debug server URL for redirecting to it.
-func Start(funcs map[string]interface{}, dest string) (*GUI, error) {
-	gui := &GUI{
-		Finished:  make(chan error),
-		Connected: make(chan socketio.Conn),
-	}
-	server, err := socketio.NewServer(nil)
-	if err != nil {
-		return nil, err
-	}
-	for n, f := range funcs {
-		server.OnEvent("/", n, f)
-	}
-	server.OnEvent("/", "initialize_gogui", func(s socketio.Conn) {
-		gui.Connected <- s
-	})
-	server.OnError("/", func(e error) {
+func (g *GUI) Start(dest string) error {
+	g.Client.OnError(func(e error) {
 		log.Println("error", e)
-		gui.Finished <- e
+		g.Finished <- e
 	})
-	server.OnDisconnect("/", func(s socketio.Conn, msg string) {
-		gui.Finished <- nil
+	g.Client.OnDisconnect(func() {
+		g.Finished <- nil
 	})
-	server.OnConnect("/", func(s socketio.Conn) error {
-		log.Println("connected:", s.ID())
-		return nil
+	g.Client.OnConnect(func() {
+		log.Println("connected")
+		g.Connected <- struct{}{}
 	})
-	go server.Serve()
-
-	http.Handle("/socket.io/", server)
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		serveWs(g.Client, w, r)
+	})
 	if dest == "" {
 		http.Handle("/", http.FileServer(http.Dir("./asset")))
 	} else {
@@ -73,13 +79,13 @@ func Start(funcs map[string]interface{}, dest string) (*GUI, error) {
 
 	log.Println("Serving at localhost:5000...")
 	go func() {
-		defer server.Close()
+		defer g.Client.Close()
 		if err := http.ListenAndServe(":5000", nil); err != nil {
 			log.Println(err)
-			gui.Finished <- err
+			g.Finished <- err
 		}
 	}()
-	return gui, StartBrowser("http://localhost:5000")
+	return browser.Start("http://localhost:5000")
 }
 
 func doProxy(dest string) func(w http.ResponseWriter, r *http.Request) {

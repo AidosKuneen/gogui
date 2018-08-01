@@ -26,37 +26,37 @@ import (
 	"time"
 
 	"github.com/AidosKuneen/gogui"
-	"gopkg.in/googollee/go-socket.io.v1"
 )
 
 func main() {
-	funcs := map[string]interface{}{
-		"msg": func(s socketio.Conn, msg string) string {
-			log.Println("receive message", msg)
-			s.Emit("reply", "emit from server "+msg, func(dat string) {
-				log.Println("emit from server ", dat)
-			})
-			return "ack " + msg
-		},
-	}
 	log.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 
 	dest := ""
 	if len(os.Args) > 1 {
 		dest = os.Args[1]
 	}
-	gui, err := gogui.Start(funcs, dest)
-	if err != nil {
+	gui := gogui.New()
+
+	gui.On("msg", func(msg string) string {
+		log.Println("receive message", msg)
+		gui.Emit("reply", "emit from server "+msg, func(dat string) {
+			log.Println("emit from server ", dat)
+		})
+		r := "ack " + msg
+		return r
+	})
+
+	if err := gui.Start(dest); err != nil {
 		log.Fatal(err)
 	}
-	var con socketio.Conn
 	select {
 	case <-time.After(60 * time.Second):
 		log.Println("failed to initialize")
 		return
-	case con = <-gui.Connected:
+	case <-gui.Connected:
 	}
-	con.Emit("reply", "after 3 secs", func(dat string) {
+	msg := "after 3 secs"
+	gui.Emit("reply", msg, func(dat string) {
 		log.Println("emit from server ", dat)
 	})
 	if err := <-gui.Finished; err != nil {

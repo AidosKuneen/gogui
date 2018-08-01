@@ -61,25 +61,7 @@
   </form>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
   <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-  <script>
-    $(function () {
-      var socket = io();
-      socket.on('reply', function (msg, cb) {
-        $('#messages').append($('<li>').text(msg));
-        cb("callback from client ");
-      });
-      $('form').submit(function () {
-        socket.emit('msg', $('#m').val(), function (data) {
-          $('#messages').append($('<li>').text('ACK CALLBACK: ' + data));
-        });
-        $('#m').val('');
-        return false;
-      });
-      setTimeout(function () {
-        socket.emit("initialize_gogui")
-      }, 2000)
-    })
-  </script>
+  <script src="bundle.js"></script>
 </body>
 
 </html>
