@@ -29,9 +29,9 @@ class GUI {
     private conn: WebSocket;
     private fconnect: () => void;
     private fdisconnect: () => void;
-    private ferror: (string) => void;
-    private fon: { [key: string]: (any) => any } = {};
-    private ackfunc: { [key: number]: (any) => void } = {};
+    private ferror: (arg: string) => void;
+    private fon: { [key: string]: (arg: any) => any } = {};
+    private ackfunc: { [key: number]: (arg: any) => void } = {};
     private id = 0;
 
     public onConnect = (f: () => void) => {
@@ -40,20 +40,20 @@ class GUI {
     public onDisconnect = (f: () => void) => {
         this.fdisconnect = f
     }
-    public onError = (f: (string) => void) => {
+    public onError = (f: (arg: string) => void) => {
         this.ferror = f
     }
-    public on = (name: string, f: (any) => any) => {
+    public on = (name: string, f: (arg: any) => any) => {
         this.fon[name] = f
     }
-    public emit = (name: string, dat: any, f: (any) => void) => {
+    public emit = (name: string, dat: any, f: (arg: any) => void) => {
         const msg = {
-            type: header.event,
             id: this.id,
             param: {
-                name: name,
+                name,
                 param: dat,
-            }
+            },
+            type: header.event,
         }
         this.ackfunc[this.id] = f
         this.id++
@@ -65,8 +65,8 @@ class GUI {
         this.conn = new WebSocket("ws://" + document.location.host + "/ws");
         this.conn.onopen = () => {
             const msg = {
-                type: header.connect,
                 id: parent.id,
+                type: header.connect,
             }
             parent.id++
             parent.conn.send(JSON.stringify(msg))
@@ -79,7 +79,7 @@ class GUI {
                 this.fdisconnect()
             }
         }
-        this.conn.onmessage = function (event: MessageEvent) {
+        this.conn.onmessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
             switch (msg.type) {
                 case header.connect:
@@ -95,9 +95,9 @@ class GUI {
                         }
                         const result = f(msg.param.param)
                         const resp = {
-                            type: header.ack,
                             id: parent.id,
                             param: result,
+                            type: header.ack,
                         }
                         parent.conn.send(JSON.stringify(resp))
                     }
