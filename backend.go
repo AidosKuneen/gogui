@@ -23,7 +23,9 @@ package gogui
 import (
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/AidosKuneen/gogui/browser"
 )
@@ -76,16 +78,19 @@ func (g *GUI) Start(dest string) error {
 	} else {
 		http.HandleFunc("/", doProxy(dest))
 	}
-
-	log.Println("Serving at localhost:5000...")
+	pno, err := freePort()
+	if err != nil {
+		return err
+	}
+	log.Println("Serving at localhost:", pno, "...")
 	go func() {
 		defer g.Client.Close()
-		if err := http.ListenAndServe(":5000", nil); err != nil {
+		if err := http.ListenAndServe(":"+strconv.Itoa(pno), nil); err != nil {
 			log.Println(err)
 			g.Finished <- err
 		}
 	}()
-	return browser.Start("http://localhost:5000")
+	return browser.Start("http://localhost:" + strconv.Itoa(pno))
 }
 
 func doProxy(dest string) func(w http.ResponseWriter, r *http.Request) {
@@ -112,4 +117,18 @@ func doProxy(dest string) func(w http.ResponseWriter, r *http.Request) {
 		io.Copy(w, resp.Body)
 		resp.Body.Close()
 	}
+}
+
+func freePort() (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
 }
