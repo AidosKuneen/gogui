@@ -99,11 +99,22 @@ func doProxy(dest string) func(w http.ResponseWriter, r *http.Request) {
 		client := &http.Client{}
 		url := dest + r.RequestURI
 		req, err := http.NewRequest(r.Method, url, r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		for name, value := range r.Header {
 			req.Header.Set(name, value[0])
 		}
 		resp, err = client.Do(req)
-		r.Body.Close()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err = r.Body.Close(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -114,8 +125,14 @@ func doProxy(dest string) func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set(k, v[0])
 		}
 		w.WriteHeader(resp.StatusCode)
-		io.Copy(w, resp.Body)
-		resp.Body.Close()
+		if _, err = io.Copy(w, resp.Body); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err = resp.Body.Close(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -129,6 +146,10 @@ func freePort() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer l.Close()
+	defer func() {
+		if err = l.Close(); err != nil {
+			log.Println(err)
+		}
+	}()
 	return l.Addr().(*net.TCPAddr).Port, nil
 }

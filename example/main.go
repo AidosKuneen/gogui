@@ -37,16 +37,22 @@ func main() {
 	}
 	gui := gogui.New()
 
-	gui.On("msg", func(msg string) string {
+	err := gui.On("msg", func(msg string) string {
 		log.Println("receive message", msg)
-		gui.Emit("reply", "emit from server "+msg, func(dat string) {
+		err2 := gui.Emit("reply", "emit from server "+msg, func(dat string) {
 			log.Println("emit from server ", dat)
 		})
+		if err2 != nil {
+			log.Fatal(err2)
+		}
 		r := "ack " + msg
 		return r
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	if err := gui.Start(dest); err != nil {
+	if err = gui.Start(dest); err != nil {
 		log.Fatal(err)
 	}
 	select {
@@ -56,9 +62,12 @@ func main() {
 	case <-gui.Connected:
 	}
 	msg := "after 3 secs"
-	gui.Emit("reply", msg, func(dat string) {
+	err = gui.Emit("reply", msg, func(dat string) {
 		log.Println("emit from server ", dat)
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 	if err := <-gui.Finished; err != nil {
 		log.Println(err)
 	}

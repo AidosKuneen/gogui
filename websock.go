@@ -176,15 +176,16 @@ func (c *Client) error(err error) {
 // reads from this goroutine.
 func (c *Client) readPump() error {
 	defer func() {
-		c.conn.Close()
+		if err := c.conn.Close(); err != nil {
+			log.Println(err)
+		}
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	if err := c.conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
 		return err
 	}
 	c.conn.SetPongHandler(func(string) error {
-		c.conn.SetReadDeadline(time.Now().Add(pongWait))
-		return nil
+		return c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	})
 	c.conn.SetCloseHandler(func(int, string) error {
 		if c.fdisconnect != nil {
@@ -271,7 +272,9 @@ func (c *Client) writePump() error {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+		if err := c.conn.Close(); err != nil {
+			log.Println(err)
+		}
 	}()
 	for {
 		select {
@@ -280,15 +283,16 @@ func (c *Client) writePump() error {
 				return err
 			}
 			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return nil
+				return c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 			}
 
 			if err := c.conn.WriteJSON(message); err != nil {
 				return err
 			}
 		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+				return err
+			}
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return err
 			}
