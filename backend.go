@@ -47,8 +47,10 @@ func New() *GUI {
 }
 
 //On registers handler for event n.
-func (g *GUI) On(n string, f interface{}) error {
-	return g.Client.On(n, f)
+func (g *GUI) On(n string, f interface{}) {
+	if err := g.Client.On(n, f); err != nil {
+		panic(err)
+	}
 }
 
 //Emit emits "name" event with  dat.
