@@ -42,14 +42,14 @@ func chromePaths() *cmdarg {
 	k, err := registry.OpenKey(registry.LOCAL_MACHINE, regpath, registry.QUERY_VALUE)
 	if err != nil {
 		log.Println(regpath, err)
-		return nil, nil
+		return nil
 	}
 	defer k.Close()
 
 	s, _, err := k.GetStringValue("")
 	if err != nil {
 		log.Println(err)
-		return nil, nil
+		return nil
 	}
 	return &cmdarg{
 		cmd: []string{s},

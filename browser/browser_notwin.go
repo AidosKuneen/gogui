@@ -1,4 +1,4 @@
-// +!build windows
+// +build !windows
 
 // Copyright (c) 2018 Aidos Developer
 
