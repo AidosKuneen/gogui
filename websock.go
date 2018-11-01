@@ -21,12 +21,14 @@
 package gogui
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -83,7 +85,7 @@ var upgrader = websocket.Upgrader{
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-
+	sync.RWMutex
 	// The websocket connection.
 	conn *websocket.Conn
 
@@ -175,11 +177,6 @@ func (c *Client) error(err error) {
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
 func (c *Client) readPump() error {
-	defer func() {
-		if err := c.conn.Close(); err != nil {
-			log.Println(err)
-		}
-	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	if err := c.conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
 		return err
@@ -187,19 +184,9 @@ func (c *Client) readPump() error {
 	c.conn.SetPongHandler(func(string) error {
 		return c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	})
-	c.conn.SetCloseHandler(func(int, string) error {
-		if c.fdisconnect != nil {
-			c.fdisconnect()
-		}
-		return nil
-	})
 	for {
 		var p packetRead
 		if err := c.conn.ReadJSON(&p); err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				c.error(err)
-				continue
-			}
 			return err
 		}
 		switch p.Type {
@@ -268,16 +255,17 @@ func (c *Client) readPump() error {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *Client) writePump() error {
+func (c *Client) writePump(ctx context.Context) error {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		if err := c.conn.Close(); err != nil {
-			log.Println(err)
-		}
 	}()
+	ctx2, cancel := context.WithCancel(ctx)
+	defer cancel()
 	for {
 		select {
+		case <-ctx2.Done():
+			return nil
 		case message, ok := <-c.send:
 			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
 				return err
@@ -302,6 +290,8 @@ func (c *Client) writePump() error {
 
 // serveWs handles websocket requests from the peer.
 func serveWs(client *Client, w http.ResponseWriter, r *http.Request) {
+	client.Lock()
+	defer client.Unlock()
 	if client.conn != nil {
 		log.Println("only one person can connect")
 		return
@@ -313,26 +303,35 @@ func serveWs(client *Client, w http.ResponseWriter, r *http.Request) {
 	}
 	client.conn = conn
 
+	ctx, cancel := context.WithCancel(context.Background())
+	var wg sync.WaitGroup
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
+	wg.Add(2)
 	go func() {
-		if err := client.writePump(); err != nil {
-			if client.ferror != nil {
-				client.ferror(err)
-			}
+		if err := client.writePump(ctx); err != nil {
+			log.Println(err)
 		}
-		if client.fdisconnect != nil {
-			client.fdisconnect()
-		}
+		wg.Done()
 	}()
 	go func() {
 		if err := client.readPump(); err != nil {
-			if client.ferror != nil {
-				client.ferror(err)
-			}
+			log.Println(err)
 		}
-		if client.fdisconnect != nil {
-			client.fdisconnect()
+		wg.Done()
+		cancel()
+	}()
+	go func() {
+		wg.Wait()
+		if err := client.conn.Close(); err != nil {
+			log.Println(err)
+		}
+		log.Println("closed")
+		client.conn = nil
+		time.Sleep(3 * time.Second)
+		if client.conn == nil && client.ferror != nil {
+			client.ferror(errors.New("connection closed"))
+			log.Println("end of pump")
 		}
 	}()
 	client.send <- &packetWrite{

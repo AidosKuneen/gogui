@@ -22,6 +22,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -48,7 +49,7 @@ func main() {
 		r := "ack " + msg
 		return r
 	})
-
+	http.Handle("/", http.FileServer(http.Dir("./asset")))
 	if err := gui.Start(dest); err != nil {
 		log.Fatal(err)
 	}

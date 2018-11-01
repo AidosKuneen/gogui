@@ -40,8 +40,8 @@ type GUI struct {
 //New returns a GUI struct.
 func New() *GUI {
 	return &GUI{
-		Finished:  make(chan error),
-		Connected: make(chan struct{}),
+		Finished:  make(chan error, 2),
+		Connected: make(chan struct{}, 100), //for reload
 		Client:    newClient(),
 	}
 }
@@ -60,12 +60,16 @@ func (g *GUI) Emit(name string, dat interface{}, f interface{}) error {
 
 //Start starts GUI bakcend.
 //Set dest to react debug server URL for redirecting to it.
+//You must setup http.Handle before calling it.
 func (g *GUI) Start(dest string) error {
 	g.Client.OnError(func(e error) {
 		log.Println("error", e)
-		g.Finished <- e
+		if len(g.Finished) == 0 {
+			g.Finished <- e
+		}
 	})
 	g.Client.OnDisconnect(func() {
+		log.Println("closed")
 		g.Finished <- nil
 	})
 	g.Client.OnConnect(func() {
@@ -75,12 +79,10 @@ func (g *GUI) Start(dest string) error {
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		serveWs(g.Client, w, r)
 	})
-	if dest == "" {
-		http.Handle("/", http.FileServer(http.Dir("./asset")))
-	} else {
+	if dest != "" {
 		http.HandleFunc("/", doProxy(dest))
 	}
-	pno, err := freePort()
+	pno, err := freePort(54244)
 	if err != nil {
 		return err
 	}
@@ -138,20 +140,31 @@ func doProxy(dest string) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func freePort() (int, error) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+func freePort(def int) (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:"+strconv.Itoa(def))
 	if err != nil {
 		return 0, err
 	}
 
 	l, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		return 0, err
-	}
 	defer func() {
 		if err = l.Close(); err != nil {
 			log.Println(err)
 		}
 	}()
+	if err == nil {
+		return def, nil
+	}
+
+	addr, err = net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+
+	l, err = net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+
 	return l.Addr().(*net.TCPAddr).Port, nil
 }

@@ -62,6 +62,10 @@ class GUI {
 
     public connect = () => {
         const parent = this
+        if (!document || !document.location){
+            console.log("page not loaded")
+            return
+        }
         this.conn = new WebSocket("ws://" + document.location.host + "/ws");
         this.conn.onopen = () => {
             const msg = {
