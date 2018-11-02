@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/AidosKuneen/gogui.svg?branch=master)](https://travis-ci.org/AidosKuneen/gogui)
 [![GoDoc](https://godoc.org/github.com/AidosKuneen/gogui?status.svg)](https://godoc.org/github.com/AidosKuneen/gogui)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/AidosKuneen/gogui/master/LICENSE)
-
+[![GolangCI](https://golangci.com/badges/github.com/AidosKuneen/gogui.svg)](https://golangci.com/r/github.com/AidosKuneen/gogui) 
 
 # gogui
 
