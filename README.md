@@ -43,6 +43,6 @@ Improvements to the codebase and pull requests are encouraged.
 
 ```
 github.com/AidosKuneen/gogui  MIT License
-github.com/gorilla/websocket  BSD 2-clause "Simplified" License (98%)
+github.com/gorilla/websocket  BSD 2-clause "Simplified" License 
 Golang Standard Library       BSD 3-clause License
 ```
