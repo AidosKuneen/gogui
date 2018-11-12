@@ -117,6 +117,8 @@ func (c *Client) OnError(f func(error)) {
 
 //On register a func which for event "name".
 func (c *Client) On(name string, f interface{}) error {
+	c.RLock()
+	defer c.RUnlock()
 	v := reflect.ValueOf(f)
 	t := v.Type()
 	if v.Kind() != reflect.Func {
@@ -134,6 +136,8 @@ func (c *Client) On(name string, f interface{}) error {
 
 //Emit emits "name" event with  dat.
 func (c *Client) Emit(name string, dat interface{}, f interface{}) error {
+	c.Lock()
+	defer c.Unlock()
 	p := &packetWrite{
 		Type: headerEvent,
 		ID:   c.id,
@@ -163,6 +167,8 @@ func (c *Client) Emit(name string, dat interface{}, f interface{}) error {
 }
 
 func (c *Client) error(err error) {
+	c.Lock()
+	defer c.Unlock()
 	c.send <- &packetWrite{
 		Type:  headerError,
 		ID:    c.id,
