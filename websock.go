@@ -231,7 +231,7 @@ func (c *Client) readPump() error {
 		case headerACK:
 			f, ok := c.ackfunc[p.ID]
 			if !ok {
-				log.Println(p.ID, "no callback")
+				// log.Println(p.ID, "no callback")
 				continue
 			}
 			t := f.Type()
