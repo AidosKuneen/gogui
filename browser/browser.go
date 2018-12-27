@@ -21,11 +21,12 @@
 package browser
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var optionAppStyleChrome = []string{"--disable-extension", "--new-window", "--app=%s"}

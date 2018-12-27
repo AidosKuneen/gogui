@@ -23,8 +23,6 @@ package gogui
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -32,6 +30,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 )
 
 //Message Headers
@@ -185,7 +184,7 @@ func (c *Client) error(err error) {
 func (c *Client) readPump() error {
 	c.conn.SetReadLimit(maxMessageSize)
 	if err := c.conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	c.conn.SetPongHandler(func(string) error {
 		return c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -193,7 +192,7 @@ func (c *Client) readPump() error {
 	for {
 		var p packetRead
 		if err := c.conn.ReadJSON(&p); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 		switch p.Type {
 		case headerConnect:
@@ -248,7 +247,7 @@ func (c *Client) readPump() error {
 				c.ferror(errors.New(string(p.Param)))
 			}
 		default:
-			err := fmt.Errorf("%d unknown type", p.Type)
+			err := errors.Errorf("%d unknown type", p.Type)
 			c.error(err)
 			log.Println(err)
 			continue
@@ -274,21 +273,21 @@ func (c *Client) writePump(ctx context.Context) error {
 			return nil
 		case message, ok := <-c.send:
 			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 			if !ok {
-				return c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return errors.WithStack(c.conn.WriteMessage(websocket.CloseMessage, []byte{}))
 			}
 
 			if err := c.conn.WriteJSON(message); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		case <-ticker.C:
 			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		}
 	}

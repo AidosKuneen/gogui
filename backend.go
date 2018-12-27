@@ -28,6 +28,7 @@ import (
 	"strconv"
 
 	"github.com/AidosKuneen/gogui/browser"
+	"github.com/pkg/errors"
 )
 
 //GUI is chans for notifiing connected and finished.
@@ -84,7 +85,7 @@ func (g *GUI) Start(dest, path string) error {
 	}
 	pno, err := freePort(54244)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	log.Println("Serving at localhost:", pno, "...")
 	go func() {
@@ -143,7 +144,7 @@ func doProxy(dest string) func(w http.ResponseWriter, r *http.Request) {
 func freePort(def int) (int, error) {
 	addr, err := net.ResolveTCPAddr("tcp", "localhost:"+strconv.Itoa(def))
 	if err != nil {
-		return 0, err
+		return 0, errors.WithStack(err)
 	}
 
 	l, err := net.ListenTCP("tcp", addr)
@@ -158,12 +159,12 @@ func freePort(def int) (int, error) {
 
 	addr, err = net.ResolveTCPAddr("tcp", "localhost:0")
 	if err != nil {
-		return 0, err
+		return 0, errors.WithStack(err)
 	}
 
 	l, err = net.ListenTCP("tcp", addr)
 	if err != nil {
-		return 0, err
+		return 0, errors.WithStack(err)
 	}
 
 	return l.Addr().(*net.TCPAddr).Port, nil
