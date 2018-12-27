@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Aidos Developer
+// Copyright (c) 2019 Aidos Developer
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -71,7 +71,7 @@ func Start(p string) error {
 	}
 	for _, c := range cmds {
 		for _, cmd := range c.cmd {
-			// log.Println("executing", c, opt)
+			// log.Println("executing", cmd, c.arg)
 			viewer := exec.Command(cmd, c.arg...)
 			//viewer.Stderr = os.Stderr
 			if err := viewer.Start(); err != nil {

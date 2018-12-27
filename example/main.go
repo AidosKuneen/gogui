@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Aidos Developer
+// Copyright (c) 2019 Aidos Developer
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ func main() {
 		return r
 	})
 	http.Handle("/", http.FileServer(http.Dir("./asset")))
-	if err := gui.Start(dest); err != nil {
+	if err := gui.Start(dest, ""); err != nil {
 		log.Fatal(err)
 	}
 	select {

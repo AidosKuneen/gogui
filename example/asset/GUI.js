@@ -56,6 +56,10 @@ var GUI = /** @class */ (function () {
         };
         this.connect = function () {
             var parent = _this;
+            if (!document || !document.location) {
+                console.log("page not loaded");
+                return;
+            }
             _this.conn = new WebSocket("ws://" + document.location.host + "/ws");
             _this.conn.onopen = function () {
                 var msg = {

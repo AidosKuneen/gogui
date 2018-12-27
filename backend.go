@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Aidos Developer
+// Copyright (c) 2019 Aidos Developer
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ func (g *GUI) Emit(name string, dat interface{}, f interface{}) error {
 //Start starts GUI bakcend.
 //Set dest to react debug server URL for redirecting to it.
 //You must setup http.Handle before calling it.
-func (g *GUI) Start(dest string) error {
+func (g *GUI) Start(dest, path string) error {
 	g.Client.OnError(func(e error) {
 		log.Println("error", e)
 		if len(g.Finished) == 0 {
@@ -94,7 +94,7 @@ func (g *GUI) Start(dest string) error {
 			g.Finished <- err
 		}
 	}()
-	return browser.Start("http://localhost:" + strconv.Itoa(pno))
+	return browser.Start("http://localhost:" + strconv.Itoa(pno) + "/" + path)
 }
 
 func doProxy(dest string) func(w http.ResponseWriter, r *http.Request) {
