@@ -3,6 +3,9 @@ language: go
 go:
 - "1.11.x"
 
+env:
+- GO111MODULE=on 
+
 before_install:
 - export PATH=$PATH:$GOPATH/bin
 - go get -u github.com/mattn/goveralls
@@ -12,7 +15,7 @@ before_install:
 - go generate -x ./...
 
 script:
-  - env GO111MODULE=on go build 
+  - go build 
   
 after_script:
 - gometalinter -e bindata --deadline=1000s ./...
