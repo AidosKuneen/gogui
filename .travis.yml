@@ -18,5 +18,6 @@ script:
   - go build 
   
 after_script:
-- gometalinter -e bindata --deadline=1000s ./...
+- go mod vendor
+- env GO111MODULE=off gometalinter  --deadline=1000s ./...
 
