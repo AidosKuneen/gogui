@@ -206,6 +206,7 @@ func (c *Client) readPump() error {
 				log.Println(err)
 				continue
 			}
+			log.Println("called", param.Name)
 			f, ok := c.on[param.Name]
 			if !ok {
 				err := errors.New(param.Name + "not registered")
@@ -222,6 +223,7 @@ func (c *Client) readPump() error {
 			}
 			val := reflect.Indirect(reflect.ValueOf(obj))
 			result := f.Call([]reflect.Value{val})
+			log.Println("end of call", param.Name)
 			c.send <- &packetWrite{
 				Type:  headerACK,
 				ID:    p.ID,

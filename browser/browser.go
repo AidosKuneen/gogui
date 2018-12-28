@@ -72,11 +72,9 @@ func Start(p string) error {
 	}
 	for _, c := range cmds {
 		for _, cmd := range c.cmd {
-			// log.Println("executing", cmd, c.arg)
 			viewer := exec.Command(cmd, c.arg...)
 			//viewer.Stderr = os.Stderr
 			if err := viewer.Start(); err != nil {
-				// log.Println(err)
 				continue
 			}
 			return nil
