@@ -26,6 +26,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/AidosKuneen/gogui/browser"
 	"github.com/pkg/errors"
@@ -95,7 +96,9 @@ func (g *GUI) Start(dest, path string) error {
 			g.Finished <- err
 		}
 	}()
-	return browser.Start("http://localhost:" + strconv.Itoa(pno) + "/" + path)
+	//disable cache
+	v := strconv.Itoa(int(time.Now().Unix()))
+	return browser.Start("http://localhost:" + strconv.Itoa(pno) + "/" + path + "?v=" + v)
 }
 
 func doProxy(dest string) func(w http.ResponseWriter, r *http.Request) {
