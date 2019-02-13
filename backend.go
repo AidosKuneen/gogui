@@ -60,6 +60,11 @@ func (g *GUI) Emit(name string, dat interface{}, f interface{}) error {
 	return g.Client.Emit(name, dat, f)
 }
 
+//Error emits an error message.
+func (g *GUI) Error(err error) {
+	g.Client.Error(err)
+}
+
 //Start starts GUI bakcend.
 //Set dest to react debug server URL for redirecting to it.
 //You must setup http.Handle before calling it.

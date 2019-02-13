@@ -165,7 +165,8 @@ func (c *Client) Emit(name string, dat interface{}, f interface{}) error {
 	return nil
 }
 
-func (c *Client) error(err error) {
+//Error emits an error message.
+func (c *Client) Error(err error) {
 	c.Lock()
 	defer c.Unlock()
 	c.send <- &packetWrite{
@@ -192,6 +193,7 @@ func (c *Client) readPump() error {
 	for {
 		var p packetRead
 		if err := c.conn.ReadJSON(&p); err != nil {
+			log.Println(err)
 			return errors.WithStack(err)
 		}
 		switch p.Type {
@@ -202,33 +204,35 @@ func (c *Client) readPump() error {
 		case headerEvent:
 			var param eventParamRead
 			if err := json.Unmarshal(p.Param, &param); err != nil {
-				c.error(err)
+				c.Error(err)
 				log.Println(err)
 				continue
 			}
-			log.Println("called", param.Name)
 			f, ok := c.on[param.Name]
 			if !ok {
 				err := errors.New(param.Name + "not registered")
-				c.error(err)
+				c.Error(err)
 				log.Println(err)
 				continue
 			}
 			t := f.Type()
 			obj := reflect.New(t.In(0)).Interface()
 			if err := json.Unmarshal(param.Param, obj); err != nil {
-				c.error(err)
+				c.Error(err)
 				log.Println(err)
 				continue
 			}
 			val := reflect.Indirect(reflect.ValueOf(obj))
-			result := f.Call([]reflect.Value{val})
-			log.Println("end of call", param.Name)
-			c.send <- &packetWrite{
-				Type:  headerACK,
-				ID:    p.ID,
-				Param: result[0].Interface(),
-			}
+			go func() {
+				log.Println("calling", param.Name)
+				result := f.Call([]reflect.Value{val})
+				log.Println("end of call", param.Name)
+				c.send <- &packetWrite{
+					Type:  headerACK,
+					ID:    p.ID,
+					Param: result[0].Interface(),
+				}
+			}()
 		case headerACK:
 			f, ok := c.ackfunc[p.ID]
 			if !ok {
@@ -238,19 +242,19 @@ func (c *Client) readPump() error {
 			t := f.Type()
 			obj := reflect.New(t.In(0)).Interface()
 			if err := json.Unmarshal(p.Param, obj); err != nil {
-				c.error(err)
+				c.Error(err)
 				log.Println(err)
 				continue
 			}
 			val := reflect.Indirect(reflect.ValueOf(obj))
-			f.Call([]reflect.Value{val})
+			go f.Call([]reflect.Value{val})
 		case headerError:
 			if c.ferror != nil {
 				c.ferror(errors.New(string(p.Param)))
 			}
 		default:
 			err := errors.Errorf("%d unknown type", p.Type)
-			c.error(err)
+			c.Error(err)
 			log.Println(err)
 			continue
 		}
@@ -265,7 +269,14 @@ func (c *Client) readPump() error {
 func (c *Client) writePump(ctx context.Context) error {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
-		ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+			default:
+				ticker.Stop()
+				return
+			}
+		}
 	}()
 	ctx2, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -280,7 +291,6 @@ func (c *Client) writePump(ctx context.Context) error {
 			if !ok {
 				return errors.WithStack(c.conn.WriteMessage(websocket.CloseMessage, []byte{}))
 			}
-
 			if err := c.conn.WriteJSON(message); err != nil {
 				return errors.WithStack(err)
 			}
