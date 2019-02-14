@@ -172,7 +172,7 @@ func (c *Client) Error(err error) {
 	c.send <- &packetWrite{
 		Type:  headerError,
 		ID:    c.id,
-		Param: []byte(err.Error()),
+		Param: err.Error(),
 	}
 	c.id++
 }
