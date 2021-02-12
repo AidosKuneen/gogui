@@ -1,6 +1,9 @@
 module github.com/AidosKuneen/gogui
 
+go 1.15
+
 require (
-	github.com/gorilla/websocket v1.4.1-0.20181206070239-95ba29eb981b
-	github.com/pkg/errors v0.8.1-0.20181023235946-059132a15dd0
+	github.com/gorilla/websocket v1.4.2
+	github.com/pkg/errors v0.9.1
+	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
 )
