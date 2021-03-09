@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/AidosKuneen/gogui.svg?branch=master)](https://travis-ci.org/AidosKuneen/gogui)
+![Golangci lint](https://github.com/AidosKuneen/gogui/actions/workflows/golangci-lint.yml/badge.svg)
+![Tests](https://github.com/AidosKuneen/gogui/actions/workflows/tests.yml/badge.svg)
 [![GoDoc](https://godoc.org/github.com/AidosKuneen/gogui?status.svg)](https://godoc.org/github.com/AidosKuneen/gogui)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/AidosKuneen/gogui/master/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/AidosKuneen/gogui)](https://goreportcard.com/report/github.com/AidosKuneen/gogui)
